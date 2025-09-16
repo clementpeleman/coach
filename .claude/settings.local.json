@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__agno__SearchAgno",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

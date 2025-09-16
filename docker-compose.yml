@@ -1,0 +1,209 @@
+version: '3.8'
+
+services:
+  # Health Coach AI Application
+  health-coach:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: health-coach-app
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://coach_user:coach_password@postgres:5432/health_coach
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - health-coach-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: health-coach-db
+    environment:
+      - POSTGRES_USER=coach_user
+      - POSTGRES_PASSWORD=coach_password
+      - POSTGRES_DB=health_coach
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - health-coach-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coach_user -d health_coach"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache and Task Queue
+  redis:
+    image: redis:7-alpine
+    container_name: health-coach-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - health-coach-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Background Task Worker
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: health-coach-worker
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://coach_user:coach_password@postgres:5432/health_coach
+      - REDIS_URL=redis://redis:6379/0
+      - WORKER_MODE=true
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - health-coach-network
+    restart: unless-stopped
+    command: ["python", "-m", "workers.task_worker"]
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: health-coach-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf
+      - ./config/ssl:/etc/nginx/ssl
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - health-coach
+    networks:
+      - health-coach-network
+    restart: unless-stopped
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: health-coach-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - health-coach-network
+    restart: unless-stopped
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: health-coach-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - health-coach-network
+    restart: unless-stopped
+
+  # Vector Database (LanceDB is file-based, so using shared volume)
+  vector-db-backup:
+    image: alpine:latest
+    container_name: health-coach-vector-backup
+    volumes:
+      - ./data:/data
+      - ./backups:/backups
+    command: >
+      sh -c "
+        while true; do
+          echo 'Creating vector database backup...'
+          tar -czf /backups/vector-db-backup-$$(date +%Y%m%d_%H%M%S).tar.gz -C /data knowledge
+          find /backups -name 'vector-db-backup-*.tar.gz' -mtime +30 -delete
+          sleep 86400
+        done
+      "
+    restart: unless-stopped
+
+  # Database Backup Service
+  db-backup:
+    image: postgres:15-alpine
+    container_name: health-coach-db-backup
+    environment:
+      - PGUSER=coach_user
+      - PGPASSWORD=coach_password
+      - PGHOST=postgres
+      - PGDATABASE=health_coach
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      - postgres
+    networks:
+      - health-coach-network
+    command: >
+      sh -c "
+        while true; do
+          echo 'Creating database backup...'
+          pg_dump -h postgres -U coach_user health_coach > /backups/db-backup-$$(date +%Y%m%d_%H%M%S).sql
+          find /backups -name 'db-backup-*.sql' -mtime +7 -delete
+          sleep 86400
+        done
+      "
+    restart: unless-stopped
+
+networks:
+  health-coach-network:
+    driver: bridge
+    name: health-coach-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

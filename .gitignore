@@ -1,0 +1,411 @@
+# Health Coach AI System - Git Ignore File
+
+# ============================================================================
+# Environment and Secrets
+# ============================================================================
+.env
+.env.*
+!.env.example
+
+# API Keys and Secrets
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
+
+# ============================================================================
+# Python
+# ============================================================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# ============================================================================
+# Database Files
+# ============================================================================
+*.db
+*.sqlite
+*.sqlite3
+coach_dev.db
+coach_test.db
+health_coach.db
+
+# Database migrations (keep structure, ignore data)
+migrations/versions/
+!migrations/versions/.gitkeep
+
+# ============================================================================
+# Data and Storage
+# ============================================================================
+data/
+!data/.gitkeep
+
+# User uploads and generated files
+uploads/
+temp/
+tmp/
+cache/
+
+# Vector database files
+knowledge/
+*.lance
+*.arrow
+
+# Backup files
+backups/
+*.backup
+*.dump
+
+# ============================================================================
+# Logs
+# ============================================================================
+logs/
+*.log
+*.log.*
+
+# Application logs
+health_coach*.log
+agent*.log
+workflow*.log
+
+# System logs
+access.log
+error.log
+debug.log
+
+# ============================================================================
+# Docker and Container Files
+# ============================================================================
+# Docker volumes
+docker-volumes/
+
+# Docker build cache
+.docker/
+
+# ============================================================================
+# IDE and Editor Files
+# ============================================================================
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json.example
+!.vscode/launch.json.example
+
+# PyCharm
+.idea/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================================================
+# Operating System Files
+# ============================================================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================================================
+# Monitoring and Analytics
+# ============================================================================
+# Prometheus data
+prometheus_data/
+
+# Grafana data
+grafana_data/
+
+# Metrics and monitoring files
+metrics/
+monitoring/
+
+# ============================================================================
+# SSL Certificates and Security
+# ============================================================================
+ssl/
+certs/
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+
+# ============================================================================
+# Temporary and Build Files
+# ============================================================================
+# General temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# ============================================================================
+# Testing Files
+# ============================================================================
+# Test outputs
+test-results/
+test-reports/
+.coverage
+htmlcov/
+
+# Mock data
+mock_data/
+test_data/
+fixtures/
+
+# ============================================================================
+# Configuration Overrides
+# ============================================================================
+# Local configuration overrides
+config/local/
+config/override/
+local_config.py
+override_config.py
+
+# ============================================================================
+# Health Coach Specific
+# ============================================================================
+# Garmin API cache
+garmin_cache/
+.garmin_token
+
+# User data (keep structure, ignore actual data)
+user_profiles/
+user_data/
+health_metrics/
+training_data/
+
+# AI model cache
+model_cache/
+embeddings_cache/
+
+# Workflow execution logs
+workflow_logs/
+execution_history/
+
+# Agent conversation history
+conversation_history/
+chat_logs/
+
+# ============================================================================
+# Documentation Build Files
+# ============================================================================
+# MkDocs
+site/
+
+# Sphinx
+docs/_build/
+docs/build/
+
+# ============================================================================
+# Deployment Files
+# ============================================================================
+# Kubernetes
+k8s-secrets/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Ansible
+*.retry
+
+# ============================================================================
+# Node.js (if using for frontend)
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# ============================================================================
+# Keep Important Empty Directories
+# ============================================================================
+!data/.gitkeep
+!logs/.gitkeep
+!backups/.gitkeep
+!uploads/.gitkeep

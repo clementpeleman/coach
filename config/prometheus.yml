@@ -1,0 +1,237 @@
+# Prometheus Configuration for Health Coach AI System
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'health-coach-monitor'
+
+# Rule files
+rule_files:
+  - "rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+
+  # Health Coach Application Metrics
+  - job_name: 'health-coach-app'
+    static_configs:
+      - targets: ['health-coach:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # PostgreSQL Database Metrics
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Redis Cache Metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Nginx Reverse Proxy Metrics
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:80']
+    metrics_path: '/nginx_status'
+    scrape_interval: 30s
+
+  # Background Worker Metrics
+  - job_name: 'health-coach-worker'
+    static_configs:
+      - targets: ['worker:9091']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # System Metrics (Node Exporter)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Recording rules for aggregations
+recording_rules:
+  # Health Coach Application Metrics
+  - name: health_coach_app
+    interval: 30s
+    rules:
+      - record: health_coach:request_rate_5m
+        expr: rate(http_requests_total[5m])
+
+      - record: health_coach:error_rate_5m
+        expr: rate(http_requests_total{status=~"5.."}[5m])
+
+      - record: health_coach:response_time_p95
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+
+      - record: health_coach:agent_response_time_p95
+        expr: histogram_quantile(0.95, rate(agent_response_duration_seconds_bucket[5m]))
+
+  # Database Performance
+  - name: database_performance
+    interval: 30s
+    rules:
+      - record: postgres:connection_usage_percent
+        expr: (postgres_stat_activity_count / postgres_settings_max_connections) * 100
+
+      - record: postgres:query_duration_p95
+        expr: histogram_quantile(0.95, rate(postgres_stat_statements_total_time_bucket[5m]))
+
+  # Cache Performance
+  - name: cache_performance
+    interval: 30s
+    rules:
+      - record: redis:hit_rate
+        expr: rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))
+
+      - record: redis:memory_usage_percent
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) * 100
+
+  # AI Agent Performance
+  - name: agent_performance
+    interval: 30s
+    rules:
+      - record: health_coach:agent_success_rate
+        expr: rate(agent_requests_total{status="success"}[5m]) / rate(agent_requests_total[5m])
+
+      - record: health_coach:agent_queue_depth
+        expr: sum(agent_queue_size) by (agent_type)
+
+      - record: health_coach:workflow_completion_rate
+        expr: rate(workflow_executions_total{status="completed"}[5m]) / rate(workflow_executions_total[5m])
+
+# Alerting rules
+alerting_rules:
+  # Application Health Alerts
+  - name: application_health
+    rules:
+      - alert: HighErrorRate
+        expr: health_coach:error_rate_5m > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      - alert: HighResponseTime
+        expr: health_coach:response_time_p95 > 5.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      - alert: ApplicationDown
+        expr: up{job="health-coach-app"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Health Coach application is down"
+
+  # Database Alerts
+  - name: database_health
+    rules:
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database is down"
+
+      - alert: HighDatabaseConnections
+        expr: postgres:connection_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connection usage is {{ $value }}%"
+
+      - alert: SlowQueries
+        expr: postgres:query_duration_p95 > 10.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+
+  # AI Agent Alerts
+  - name: agent_health
+    rules:
+      - alert: LowAgentSuccessRate
+        expr: health_coach:agent_success_rate < 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low AI agent success rate"
+          description: "Agent success rate is {{ $value }}"
+
+      - alert: HighAgentResponseTime
+        expr: health_coach:agent_response_time_p95 > 30.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High AI agent response time"
+          description: "95th percentile agent response time is {{ $value }} seconds"
+
+      - alert: WorkflowFailures
+        expr: rate(workflow_executions_total{status="failed"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High workflow failure rate"
+
+  # Infrastructure Alerts
+  - name: infrastructure_health
+    rules:
+      - alert: HighCPUUsage
+        expr: (100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space detected"
