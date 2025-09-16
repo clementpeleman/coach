@@ -49,21 +49,26 @@ class MainCoachingTeam:
         self.goal_manager = GoalManagerAgent()
 
         # Create the main coaching team
+        team_members = [
+            self.coordinator.agent,
+            self.onboarding.agent,
+            self.data_sync.agent,
+            self.training_planner.agent,
+            self.training_analyzer.agent,
+            self.health_analyzer.agent,
+            self.recovery.agent,
+            self.nutrition.agent,
+            self.goal_manager.agent
+        ]
+
         self.team = Team(
             name="Complete Health Coaching Team",
+            members=team_members,
             description="Comprehensive health and fitness coaching with all specialized agents",
-            agents=[
-                self.coordinator.agent,
-                self.onboarding.agent,
-                self.data_sync.agent,
-                self.training_planner.agent,
-                self.training_analyzer.agent,
-                self.health_analyzer.agent,
-                self.recovery.agent,
-                self.nutrition.agent,
-                self.goal_manager.agent
-            ],
-            instructions="""
+        )
+
+        # Set team instructions
+        self.team.instructions = """
             This is the main coaching team providing comprehensive health and fitness guidance.
 
             Team coordination:
@@ -84,10 +89,7 @@ class MainCoachingTeam:
             - Clear, actionable guidance
             - Educational context when helpful
             - Professional yet approachable
-            """,
-            add_datetime_to_context=True,
-            add_history_to_context=True
-        )
+            """
 
     async def handle_user_query(self, user_input: str, user_context: dict):
         """

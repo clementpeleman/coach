@@ -48,16 +48,21 @@ class AnalysisTeam:
         self.goal_manager = GoalManagerAgent()
 
         # Create the analysis team
+        team_members = [
+            self.data_sync.agent,
+            self.training_analyzer.agent,
+            self.health_analyzer.agent,
+            self.goal_manager.agent
+        ]
+
         self.team = Team(
             name="Performance Analysis Team",
+            members=team_members,
             description="Specialized team for deep performance and health analysis",
-            agents=[
-                self.data_sync.agent,
-                self.training_analyzer.agent,
-                self.health_analyzer.agent,
-                self.goal_manager.agent
-            ],
-            instructions="""
+        )
+
+        # Set team instructions
+        self.team.instructions = """
             This is a specialized analysis team focused on deep insights and comprehensive evaluation.
 
             Team expertise:
@@ -82,10 +87,7 @@ class AnalysisTeam:
             - Clear communication of uncertainty and limitations
 
             Always prioritize user safety and recommend medical consultation when appropriate.
-            """,
-            add_datetime_to_context=True,
-            add_history_to_context=True
-        )
+            """
 
     async def analyze_workout_performance(self, workout_data: dict, user_context: dict):
         """

@@ -9,7 +9,7 @@ anthropic>=0.34.0
 
 # Database and Storage
 sqlalchemy>=2.0.0
-sqlite3  # Built into Python
+# sqlite3 Built into Python
 psycopg2-binary>=2.9.0  # PostgreSQL adapter
 alembic>=1.13.0  # Database migrations
 
@@ -48,6 +48,10 @@ pydantic-settings>=2.1.0
 email-validator>=2.1.0
 passlib>=1.7.0
 python-jose>=3.3.0
+
+# pyasn1 compatibility (needed by python-jose and pyasn1-modules)
+pyasn1>=0.4.6,<0.5.0
+pyasn1-modules>=0.2.8,<0.3.0
 
 # Testing (Development)
 pytest>=7.4.0
@@ -91,3 +95,4 @@ Pillow>=10.1.0
 
 # API Documentation
 swagger-ui-bundle>=0.0.9
+
